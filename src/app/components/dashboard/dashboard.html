@@ -1,0 +1,327 @@
+<section class="dashboard-card">
+
+  <div class="dashboard-header">
+    <h2>Transport Manager – Driver Aggregates</h2>
+
+    <span class="live-indicator">
+      <span class="live-dot"></span>
+      Live
+    </span>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+
+    <div class="summary-item">
+      <span>Total Trips</span>
+      <strong>{{ totalTrips() }}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Drivers</span>
+      <strong>{{ totalDrivers() }}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Responses</span>
+      <strong>{{ totalRatings() }}</strong>
+    </div>
+
+  </div>
+
+  
+<!-- Driver table -->
+<div class="table-section">
+
+  <div class="table-header">
+
+    <h3>Driver Performance</h3>
+
+    <select
+      aria-label="Filter drivers by rating"
+      [value]="selectedFilter()"
+      (change)="selectedFilter.set(
+        $any($event.target).value
+      )"
+    >
+      <option value="all">All drivers</option>
+      <option value="below">Below 3.5 only</option>
+    </select>
+
+  </div>
+
+  <div class="table-wrapper">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Driver</th>
+          <th>Trips</th>
+          <th>Ratings</th>
+          <th>Avg ★</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (
+          driver of filteredDriverStats();
+          track driver.driverId
+        ) {
+
+          <!-- Main driver row -->
+          <tr
+            class="driver-row"
+            [class.expanded]="expandedDriverId() === driver.driverId"
+          >
+
+            <td>
+
+              <button
+                type="button"
+                class="driver-expand"
+                [attr.aria-expanded]="expandedDriverId() === driver.driverId"
+                (click)="toggleDriver(driver.driverId)"
+              >
+
+                <span class="expand-icon">
+                  {{ expandedDriverId() === driver.driverId ? '▼' : '▶' }}
+                </span>
+
+                <span>
+                  <span class="driver-name">
+                    {{ driver.driverName }}
+                  </span>
+
+                  <small>{{ driver.driverId }}</small>
+                </span>
+
+              </button>
+
+            </td>
+
+            <td>{{ driver.tripCount }}</td>
+
+            <td>{{ driver.ratingCount }}</td>
+
+            <td>
+
+              @if (driver.averageRating !== null) {
+
+                <span class="rating-value">
+                  ★ {{ driver.averageRating.toFixed(2) }}
+                </span>
+
+              } @else {
+
+                <span class="no-data">—</span>
+
+              }
+
+            </td>
+
+            <td>
+
+              @if (
+                driver.averageRating !== null &&
+                driver.averageRating < 3.5
+              ) {
+
+                <span class="status low">
+                  Low rating
+                </span>
+
+              } @else if (driver.averageRating !== null) {
+
+                <span class="status good">
+                  Good
+                </span>
+
+              } @else {
+
+                <span class="status pending">
+                  No data
+                </span>
+
+              }
+
+            </td>
+
+          </tr>
+
+          <!-- Expanded submissions -->
+          @if (expandedDriverId() === driver.driverId) {
+
+            <tr class="details-row">
+
+              <td colspan="5">
+
+                <div class="submission-details">
+
+                  <h4>Individual Trip Feedback</h4>
+
+                  @for (
+                    submission of getDriverSubmissions(driver.driverId);
+                    track submission.tripId
+                  ) {
+
+                    <div class="submission-item">
+
+                      <div class="submission-header">
+
+                        <strong>{{ submission.tripId }}</strong>
+
+                        <span class="rating-value">
+                          ★ {{ submission.rating }}/5
+                        </span>
+
+                      </div>
+
+                      <div class="submission-meta">
+
+                        <span>
+                          On time:
+                          <strong
+                            [class.positive]="submission.onTime"
+                            [class.negative]="!submission.onTime"
+                          >
+                            {{ submission.onTime ? 'Yes' : 'No' }}
+                          </strong>
+                        </span>
+
+                        @if (submission.cabClean !== undefined) {
+
+                          <span>
+                            Cab clean:
+                            <strong
+                              [class.positive]="submission.cabClean"
+                              [class.negative]="!submission.cabClean"
+                            >
+                              {{ submission.cabClean ? 'Yes' : 'No' }}
+                            </strong>
+                          </span>
+
+                        }
+
+                      </div>
+
+                      <p class="submission-comment">
+
+                        <strong>Comment:</strong>
+
+                        {{ submission.comment || 'No comment provided.' }}
+
+                      </p>
+
+                    </div>
+
+                  } @empty {
+
+                    <p class="no-submissions">
+                      No feedback submitted for this driver yet.
+                    </p>
+
+                  }
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        } @empty {
+
+          <tr>
+            <td colspan="5" class="empty-state">
+              No drivers match this filter.
+            </td>
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+
+  <!-- Overall aggregate -->
+  <div class="aggregate-section">
+
+    <div class="aggregate-row">
+      <span>All trips aggregate:</span>
+
+      <strong>
+        @if (overallRating() !== null) {
+          ★ {{ overallRating()!.toFixed(2) }}
+        } @else {
+          —
+        }
+      </strong>
+
+      <span class="response-count">
+        ({{ totalRatings() }} responses)
+      </span>
+    </div>
+
+  </div>
+
+  <!-- Driver average chart -->
+  <div class="chart-section">
+
+    <h3>Average rating per driver</h3>
+
+    <div class="chart">
+
+      @for (driver of driverStats(); track driver.driverId) {
+
+        <div class="chart-column">
+
+          <div class="bar-value">
+            @if (driver.averageRating !== null) {
+              {{ driver.averageRating.toFixed(1) }}
+            } @else {
+              —
+            }
+          </div>
+
+          <div class="bar-container">
+
+            @if (driver.averageRating !== null) {
+
+              <div
+                class="bar"
+                [class.low-bar]="driver.averageRating < 3.5"
+                [style.height.%]="getBarHeight(driver.averageRating)"
+              ></div>
+
+            }
+
+          </div>
+
+          <span class="bar-label">
+            {{ driver.driverName }}
+          </span>
+
+        </div>
+
+      }
+
+    </div>
+
+    @if (totalRatings() === 0) {
+      <p class="chart-empty">
+        No ratings available yet.
+      </p>
+    }
+
+  </div>
+
+</section>

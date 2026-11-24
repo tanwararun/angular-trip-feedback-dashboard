@@ -1,0 +1,180 @@
+<section class="feedback-card">
+
+  <h2>Submit Feedback</h2>
+
+  <div class="form-group">
+
+    <label for="trip">Select Trip *</label>
+    <select id="trip" [value]="selectedTripId()" (change)="selectedTripId.set($any($event.target).value)">
+      <option value="">Choose a trip</option>
+      @for (trip of trips(); track trip.tripId) {
+
+        <option
+          [value]="trip.tripId"
+          [disabled]="submissions().some(s => s.tripId === trip.tripId)">
+          {{ trip.tripId }} - {{ trip.driverName }}
+
+          @if (submissions().some(s => s.tripId === trip.tripId)) {
+            (Already rated)
+          }
+        </option>
+      }
+
+    </select>
+
+    @if (isAlreadyRated) {
+      <span class="error">This trip has already been rated.</span>
+    }
+
+  </div>
+
+  <!-- Selected driver -->
+  @if (selectedTripId()) {
+
+    @for (trip of trips(); track trip.tripId) {
+
+      @if (trip.tripId === selectedTripId()) {
+
+        <p class="driver-info">
+          Driver: <strong>{{ trip.driverName }}</strong>
+          ({{ trip.driverId }})
+        </p>
+
+      }
+
+    }
+
+  }
+
+  <!-- Star rating -->
+  <div class="form-group">
+
+    <label>Overall rating *</label>
+
+    <div class="stars">
+
+      @for (star of [1, 2, 3, 4, 5]; track star) {
+
+        <button
+          type="button"
+          class="star"
+          [class.active]="star <= (hoveredRating() || rating())"
+          [attr.aria-label]="'Rate ' + star + ' out of 5 stars'"
+          [attr.aria-pressed]="rating() === star"
+          (mouseenter)="hoveredRating.set(star)"
+          (mouseleave)="hoveredRating.set(0)"
+          (focus)="hoveredRating.set(star)"
+          (blur)="hoveredRating.set(0)"
+          (click)="selectRating(star)"
+        >
+          ★
+        </button>
+
+      }
+
+    </div>
+
+    @if (rating() === 0) {
+      <span class="error">
+        Please select a rating.
+      </span>
+    }
+
+  </div>
+
+  <!-- On time -->
+  <div class="form-group">
+
+    <label>Q1. Was the driver on time? *</label>
+
+    <div class="toggle-group">
+
+      <button
+        type="button"
+        [class.selected]="onTime() === true"
+        [attr.aria-pressed]="onTime() === true"
+        (click)="onTime.set(true)"
+      >
+        Yes
+      </button>
+
+      <button
+        type="button"
+        [class.selected]="onTime() === false"
+        [attr.aria-pressed]="onTime() === false"
+        (click)="onTime.set(false)"
+      >
+        No
+      </button>
+
+    </div>
+
+    @if (onTime() === null) {
+      <span class="error">
+        Please select Yes or No.
+      </span>
+    }
+
+  </div>
+
+  <!-- Cab cleanliness -->
+  <div class="form-group">
+
+    <label>Q2. Was the cab clean? *</label>
+
+    <div class="toggle-group">
+
+      <button
+        type="button"
+        [class.selected]="cabClean() === true"
+        [attr.aria-pressed]="cabClean() === true"
+        (click)="cabClean.set(true)"
+      >
+        Yes
+      </button>
+
+      <button
+        type="button"
+        [class.selected]="cabClean() === false"
+        [attr.aria-pressed]="cabClean() === false"
+        (click)="cabClean.set(false)"
+      >
+        No
+      </button>
+
+    </div>
+
+    @if (cabClean() === null) {
+      <span class="error">
+        Please select Yes or No.
+      </span>
+    }
+
+  </div>
+
+  <!-- Comment -->
+  <div class="form-group">
+
+    <label for="comment">Comments (optional)</label>
+
+    <textarea id="comment" rows="3" maxlength="201" placeholder="Share your experience..." [value]="comment()"
+    (input)="comment.set($any($event.target).value)"></textarea>
+
+    <div class="counter" [class.invalid]="isCommentInvalid">
+      {{ comment().length }} / 200
+    </div>
+
+    @if (isCommentInvalid) {
+      <span class="error">
+        Maximum 200 characters allowed.
+      </span>
+    }
+
+  </div>
+
+  <!-- Submit -->
+  <button type="button" class="submit-btn" [disabled]="isFormInvalid" (click)="submitFeedback()">
+    Submit Feedback
+  </button>
+
+</section>
