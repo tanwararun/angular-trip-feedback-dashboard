@@ -1,4 +1,3 @@
-
 # Angular Trip Feedback Dashboard
 A single-page Angular application for collecting
 employee feedback on cab drivers and displaying
